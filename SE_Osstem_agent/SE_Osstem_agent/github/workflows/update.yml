@@ -1,0 +1,71 @@
+name: Update OpenDART data and deploy dashboard
+
+on:
+  schedule:
+    - cron: '0 15 1 * *' # 00:00 KST on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: osstem-dashboard
+  cancel-in-progress: false
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Fetch OpenDART filings and financials
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: python scripts/fetch_dart.py
+
+      - name: Calculate financial ratios
+        run: python scripts/analyze_financials.py
+
+      - name: Build static dashboard
+        run: python scripts/build_dashboard.py
+
+      - name: Commit updated data and dashboard source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data dashboard
+          if git diff --cached --quiet; then
+            echo "No data changes detected."
+          else
+            git commit -m "chore: update OpenDART financial data"
+            git push
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dashboard'
+
+      - name: Deploy dashboard
+        id: deployment
+        uses: actions/deploy-pages@v4
