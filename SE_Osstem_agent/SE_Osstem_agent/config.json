@@ -1,0 +1,17 @@
+{
+  "corp_code": "00341916",
+  "stock_code": "048260",
+  "corp_name": "오스템임플란트",
+  "start_year": 2010,
+  "report_codes": {
+    "annual": "11011",
+    "half_year": "11012",
+    "q1": "11013",
+    "q3": "11014"
+  },
+  "save_raw_reports": true,
+  "prefer_consolidated": true,
+  "currency_unit": "KRW",
+  "display_unit": "억원",
+  "dashboard_path": "dashboard/"
+}
